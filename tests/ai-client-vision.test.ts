@@ -30,6 +30,13 @@ describe('vision payload', () => {
     expect(user).toHaveLength(1);
   });
 
+  it('prompts caption priority and image text reading', () => {
+    const system = buildMessages({ text: 'caption', imageDataUrl: DATA_URL })[0]?.content;
+    expect(system).toContain('visible text in the image');
+    expect(system).toContain('caption is the primary source');
+    expect(system).toContain('OCR');
+  });
+
   it('sends the image through to the provider in responses API', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(

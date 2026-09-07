@@ -62,4 +62,34 @@ describe('facebook adapter', () => {
     const target = await facebookAdapter.extractTarget(composer());
     expect(target?.text).toBe('Is this today?');
   });
+
+  it('extracts Facebook story captions without preview metadata or controls', async () => {
+    document.body.innerHTML = `
+      <div role="article">
+        <div data-ad-rendering-role="story_message">
+          <div data-ad-preview="message">
+            <div dir="auto">এই ছেলেটার গুণের কোনো শেষ নেই।</div>
+            <div dir="auto">আখতার হোসেনের চলার পথ বিপদমুক্ত হোক।</div>
+            <div role="button">See less</div>
+          </div>
+        </div>
+        <div data-ad-rendering-role="meta">Mobile uploads</div>
+        <div role="textbox" contenteditable="true" aria-label="Comment on post"></div>
+      </div>`;
+      const target = await facebookAdapter.extractTarget(composer());
+      expect(target?.text).toContain('এই ছেলেটার গুণের কোনো শেষ নেই।');
+      expect(target?.text).toContain('আখতার হোসেনের চলার পথ বিপদমুক্ত হোক।');
+      expect(target?.text).not.toContain('See less');
+      expect(target?.text).not.toContain('Mobile uploads');
+    });
+
+  it('accepts an image-only post', async () => {
+    document.body.innerHTML = `
+      <div role="article">
+        <img src="https://scontent.xx.fbcdn.net/v/t31/image.jpg" width="960" height="720">
+        <div role="textbox" contenteditable="true" aria-label="Comment on post"></div>
+      </div>`;
+    const target = await facebookAdapter.extractTarget(composer());
+    expect(target).toEqual({ text: '' });
+  });
 });

@@ -13,7 +13,9 @@ Before writing, silently analyze the target post or comment:
 
 Then write ONE reply that:
 - Directly responds to THAT post's specific content — reference what it actually says or shows (a reply that could fit any post is a failure).
-- Matches the mood and purpose: congratulate an achievement, comfort a loss, laugh at a joke, answer a question, share the joy of a photo (if an image description is attached, use its scene, event, and emotion).
+  - If an image is attached, silently read visible text in the image (OCR), people, scene, event, and emotion.
+  - The caption is the primary source of meaning and intent; use image details and OCR only as supporting context. If they conflict, follow the caption and avoid asserting the conflicting image detail.
+  - Matches the mood and purpose: congratulate an achievement, comfort a loss, laugh at a joke, answer a question, share the joy of a photo (if an image is attached, use its scene, event, visible text, and emotion as supporting context).
 - Is 1-2 sentences, max ~25 words, natural and human. No emojis unless the target uses them. Never mention that you are an AI.
 - Output ONLY the reply text — no preamble, no quotes, no explanation.`;
 

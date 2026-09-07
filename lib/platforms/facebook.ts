@@ -67,10 +67,20 @@ export const facebookAdapter: PlatformAdapter = {
     const comment = closestTextBefore(article, composer, '[data-comment-text]');
     const post = article.querySelector<HTMLElement>('[data-post-text]');
 
-    // Real Facebook DOM has neither marker: fall back to the article's
-    // own text minus UI noise.
-    const text = (comment ?? post)?.textContent?.trim() ?? articleText(article);
-    return text ? { text } : null;
+    // Real Facebook posts expose the caption through semantic ad-rendering
+    // attributes rather than stable class names.
+    const storyMessage = article.querySelector<HTMLElement>(
+      '[data-ad-rendering-role="story_message"] [data-ad-preview="message"], ' +
+        '[data-ad-rendering-role="story_message"], ' +
+        '[data-ad-preview="message"]',
+    );
+
+    // Fall back to the article's own text only for test fixtures or layouts
+    // without the semantic caption container.
+    const text = comment
+      ? comment.textContent?.trim() ?? ''
+      : post?.textContent?.trim() ?? (storyMessage ? captionText(storyMessage) : articleText(article));
+    return text || getPostImageUrl(article) ? { text } : null;
   },
 
   insertReply(composer: Composer['editor'], text: string): boolean {
@@ -109,6 +119,23 @@ export function getPostImageUrl(article: Element): string | null {
 }
 
 /** Heuristic for real-DOM fallback: article text minus button labels. */
+function captionText(container: Element): string {
+  const clone = container.cloneNode(true) as Element;
+  clone
+    .querySelectorAll('[role="button"], [role="textbox"], nav, svg, img, input, [data-ad-rendering-role="meta"]')
+    .forEach((n) => n.remove());
+  clone.querySelectorAll('div, p, br').forEach((el) => {
+    el.insertAdjacentText('beforebegin', '\n');
+  });
+  return (
+    clone.textContent
+      ?.replace(/[ \t]+/g, ' ')
+      .replace(/\n\s*/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim() ?? ''
+  );
+}
+
 function articleText(article: Element): string {
   const clone = article.cloneNode(true) as Element;
   clone
