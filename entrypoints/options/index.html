@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AIReply Settings</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 480px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      label { display: block; margin: 1rem 0 0.25rem; font-weight: 600; }
+      input, textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.5rem;
+        border: 1px solid #8884;
+        border-radius: 6px;
+        font: inherit;
+      }
+      textarea { resize: vertical; min-height: 60px; }
+      .hint { font-size: 0.8rem; opacity: 0.7; margin-top: 0.15rem; }
+      .row { margin-top: 1.25rem; display: flex; gap: 0.5rem; align-items: center; }
+      button { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; }
+      #save { background: #0866ff; color: #fff; }
+      #status { font-size: 0.9rem; }
+    </style>
+  </head>
+  <body>
+    <h1>AIReply Settings</h1>
+    <p>
+      Bring your own key. Stored locally in your browser; post text and images
+      are sent only to the API endpoint you configure below.
+    </p>
+
+    <label for="apiKey">API key</label>
+    <input id="apiKey" type="password" autocomplete="off" />
+
+    <label for="baseUrl">API base URL</label>
+    <input id="baseUrl" type="url" />
+    <p class="hint">
+      Any OpenAI-compatible endpoint. Default:
+      https://openrouter.ai/api/v1 (also works: api.openai.com/v1,
+      api.groq.com/openai/v1, Gemini's OpenAI-compat path)
+    </p>
+
+    <label for="model">Model</label>
+    <input id="model" type="text" />
+    <p class="hint">Must support vision + your reply languages. Default: google/gemini-2.5-flash</p>
+
+    <label for="persona">Persona / tone (optional)</label>
+    <textarea id="persona" placeholder="e.g. warm, casual, the way I talk to friends"></textarea>
+
+    <div class="row">
+      <button id="save">Save</button>
+      <span id="status" role="status"></span>
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

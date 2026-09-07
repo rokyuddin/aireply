@@ -1,0 +1,39 @@
+import { getSettings, saveSettings } from '../../lib/storage';
+
+const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+async function load(): Promise<void> {
+  const s = await getSettings();
+  ($('apiKey') as HTMLInputElement).value = s.apiKey;
+  ($('baseUrl') as HTMLInputElement).value = s.baseUrl;
+  ($('model') as HTMLInputElement).value = s.model;
+  ($('persona') as HTMLTextAreaElement).value = s.persona;
+}
+
+async function save(): Promise<void> {
+  const baseUrl = ($('baseUrl') as HTMLInputElement).value.trim();
+  if (baseUrl && !/^https?:\/\//i.test(baseUrl)) {
+    status('Base URL must start with http:// or https://', true);
+    return;
+  }
+  await saveSettings({
+    apiKey: ($('apiKey') as HTMLInputElement).value.trim(),
+    baseUrl,
+    model: ($('model') as HTMLInputElement).value.trim(),
+    persona: ($('persona') as HTMLTextAreaElement).value.trim(),
+  });
+  status('Saved ✓');
+}
+
+function status(text: string, isError = false): void {
+  const el = $('status');
+  el.textContent = text;
+  el.style.color = isError ? '#e0245e' : '';
+  setTimeout(() => {
+    el.textContent = '';
+    el.style.color = '';
+  }, 2500);
+}
+
+$('save').addEventListener('click', () => void save());
+void load();
