@@ -1,5 +1,5 @@
 import type { IconHandle } from '../../components/icon';
-import { isIconMounted, mountIcon } from '../../components/icon';
+import { getIconAnchor, isIconMounted, mountIcon } from '../../components/icon';
 import type { Composer, PlatformAdapter } from './types';
 
 interface Entry {
@@ -53,7 +53,7 @@ export class IconInjector {
       live.add(editor);
       // Re-mount when React re-rendered the row and removed our icon
       // host while the editor element itself survived.
-      if (this.decorated.has(editor) && isIconMounted(editor.parentElement)) continue;
+      if (this.decorated.has(editor) && isIconMounted(getIconAnchor(editor))) continue;
       this.decorated.add(editor);
       const handle = mountIcon({ editor }, () => this.onClick({ editor }, handle));
       this.entries.set(editor, { editor, icon: handle });

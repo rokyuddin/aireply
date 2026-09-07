@@ -18,6 +18,8 @@ export default defineContentScript({
     const adapter = currentAdapter([facebookAdapter]);
     if (!adapter) return;
 
+    console.debug('[AIReply] content script active on', location.href);
+
     const injector = new IconInjector(adapter, (composer, icon) => {
       void handleIconClick(composer, icon);
     });
@@ -49,6 +51,8 @@ export default defineContentScript({
         await chrome.runtime.sendMessage(req);
         return;
       }
+
+      await adapter.activateComposer?.(composer.editor);
 
       const target = await extractTargetWithExpansion(adapter, composer);
       if (!target) {

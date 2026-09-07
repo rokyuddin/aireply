@@ -30,11 +30,41 @@ describe('vision payload', () => {
     expect(user).toHaveLength(1);
   });
 
-  it('sends the image through to the provider', async () => {
+  it('sends the image through to the provider in responses API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          output: [
+            {
+              type: 'message',
+              content: [{ type: 'output_text', text: 'nice pic' }],
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await generateReply(settings, { text: 'look', imageDataUrl: DATA_URL });
+    expect(reply).toBe('nice pic');
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    const userContent = body.input[0].content;
+    expect(userContent).toHaveLength(2);
+    expect(userContent[1].type).toBe('input_image');
+    expect(userContent[1].image_url).toBe(DATA_URL);
+  });
+
+  it('sends the image through to custom chat/completions provider', async () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse('nice pic'));
     vi.stubGlobal('fetch', fetchMock);
 
-    await generateReply(settings, { text: 'look', imageDataUrl: DATA_URL });
+    await generateReply(
+      { ...settings, baseUrl: 'https://openrouter.ai/api/v1' },
+      { text: 'look', imageDataUrl: DATA_URL },
+    );
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);

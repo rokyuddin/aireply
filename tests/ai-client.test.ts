@@ -15,6 +15,20 @@ function okResponse(text: string): Response {
   );
 }
 
+function okManifestResponse(text: string): Response {
+  return new Response(
+    JSON.stringify({
+      output: [
+        {
+          type: 'message',
+          content: [{ type: 'output_text', text }],
+        },
+      ],
+    }),
+    { status: 200 },
+  );
+}
+
 describe('buildMessages', () => {
   it('includes mood and language instructions in the system prompt', () => {
     const messages = buildMessages({ text: 'hello' });
@@ -54,7 +68,7 @@ describe('generateReply', () => {
   });
 
   it('POSTs to the configured base URL with bearer auth and returns the reply text', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okResponse('Great news! 🎉'));
+    const fetchMock = vi.fn().mockResolvedValue(okManifestResponse('Great news! 🎉'));
     vi.stubGlobal('fetch', fetchMock);
 
     const target: ReplyTarget = { text: 'I got the job!' };
@@ -62,16 +76,15 @@ describe('generateReply', () => {
 
     expect(reply).toBe('Great news! 🎉');
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('https://openrouter.ai/api/v1/chat/completions');
+    expect(url).toBe('https://app.manifest.build/v1/responses');
     expect(init.method).toBe('POST');
     expect((init.headers as Record<string, string>).Authorization).toBe(
       'Bearer sk-test',
     );
     const body = JSON.parse(init.body as string);
     expect(body.model).toBe(DEFAULT_SETTINGS.model);
-    expect(body.temperature).toBe(0.7);
-    expect(body.max_tokens).toBe(200);
-    expect(body.stream).toBe(false);
+    expect(body.store).toBe(false);
+    expect(body.max_output_tokens).toBe(500);
   });
 
   it('respects a custom base URL and model', async () => {

@@ -10,9 +10,9 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  apiKey: '',
-  baseUrl: 'https://openrouter.ai/api/v1',
-  model: 'google/gemini-2.5-flash',
+  apiKey: 'mnfst_nBytW7Wg2mj7LExom0Mul5xb2nWwbj6jma5BRti17fY',
+  baseUrl: 'https://app.manifest.build/v1',
+  model: 'auto',
   persona: '',
 };
 

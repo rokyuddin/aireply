@@ -22,17 +22,17 @@ async function save(): Promise<void> {
     model: ($('model') as HTMLInputElement).value.trim(),
     persona: ($('persona') as HTMLTextAreaElement).value.trim(),
   });
-  status('Saved ✓');
+  status('Settings saved ✓ Open Facebook to use AIReply', false);
 }
 
 function status(text: string, isError = false): void {
   const el = $('status');
   el.textContent = text;
-  el.style.color = isError ? '#e0245e' : '';
+  el.className = isError ? 'error' : 'success';
   setTimeout(() => {
     el.textContent = '';
-    el.style.color = '';
-  }, 2500);
+    el.className = '';
+  }, 4000);
 }
 
 $('save').addEventListener('click', () => void save());

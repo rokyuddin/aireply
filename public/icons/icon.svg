@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none">
+  <defs>
+    <linearGradient id="aireply-g" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <path d="M12 2l1.9 5.6L19.5 9l-4.4 3.9L16.2 18 12 15l-4.2 3 1.1-5.1L4.5 9l5.6-1.4L12 2z" fill="url(#aireply-g)"/>
+</svg>

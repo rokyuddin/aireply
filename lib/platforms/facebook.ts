@@ -10,15 +10,56 @@ export const facebookAdapter: PlatformAdapter = {
   id: 'facebook',
   matches: ['^https://([a-z]+\\.)?facebook\\.com/'],
   findComposers(): HTMLElement[] {
-    return [
+    // Primary: editors inside a post article (feed, permalink page).
+    const inArticle = [
       ...document.querySelectorAll<HTMLElement>(
         'div[role="article"] div[role="textbox"][contenteditable="true"]',
       ),
     ];
+    // Permalink/comment dialogs: role="dialog" roots, editors not
+    // necessarily under an article.
+    const inDialog = [
+      ...document.querySelectorAll<HTMLElement>(
+        'div[role="dialog"] div[role="textbox"][contenteditable="true"]',
+      ),
+    ];
+    // Watchdog: any contenteditable textbox whose label looks like a
+    // comment composer. Catches layouts where the editor sits outside
+    // both article and dialog containers.
+    const byLabel = [
+      ...document.querySelectorAll<HTMLElement>(
+        'div[role="textbox"][contenteditable="true"][aria-label]',
+      ),
+    ].filter((el) => /comment|commenting|write a/i.test(el.getAttribute('aria-label') ?? ''));
+
+    const all = [...inArticle, ...inDialog, ...byLabel];
+    return [...new Set(all.filter((el) => el.isConnected))];
+  },
+
+  /**
+   * Some comment composers render collapsed (placeholder row, not
+   * focused) and only become a real contenteditable editor after the
+   * user clicks them. Focus is enough to expand them; if the element
+   * isn't editable yet, click it first.
+   */
+  async activateComposer(composer: HTMLElement): Promise<void> {
+    if (!composer.isContentEditable) {
+      (composer.closest('[role="button"]') ?? composer).dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true }),
+      );
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    composer.focus();
   },
 
   async extractTarget(composer: HTMLElement): Promise<ReplyTarget | null> {
-    const article = composer.closest('div[role="article"]');
+    // Feed/permalink pages: composer sits inside the post's article.
+    // Dialogs: the article lives inside the same dialog (or is the
+    // dialog's own article); walk up to whichever container has one.
+    const article =
+      composer.closest('div[role="article"]') ??
+      composer.closest('div[role="dialog"]')?.querySelector('div[role="article"]') ??
+      composer.closest('div[role="dialog"]');
     if (!article) return null;
 
     // A comment target is a text container nearer to the composer than

@@ -3,6 +3,10 @@ import { generateReply } from '../lib/ai-client';
 import { fetchImageAsDataUrl } from '../lib/image-pipeline';
 
 export default defineBackground(() => {
+  chrome.action?.onClicked?.addListener(() => {
+    void chrome.runtime.openOptionsPage();
+  });
+
   chrome.runtime.onMessage.addListener(
     (msg: MessageRequest, _sender, sendResponse) => {
       if (msg?.type === 'OPEN_OPTIONS') {
