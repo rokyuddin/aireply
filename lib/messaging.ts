@@ -18,6 +18,35 @@ export interface GenerateReplyRequest {
   settings: Settings;
 }
 
+export interface GenerateReplyStreamRequest {
+  type: 'GENERATE_REPLY_STREAM';
+  requestId: string;
+  target: ReplyTarget;
+  settings: Settings;
+}
+
+export interface ReplyStreamEvent {
+  requestId: string;
+  type: 'REPLY_CHUNK' | 'REPLY_DONE' | 'REPLY_ERROR';
+  text?: string;
+  error?: string;
+}
+
+export interface GenerateReplyChunk {
+  type: 'REPLY_CHUNK';
+  text: string;
+}
+
+export interface GenerateReplyDone {
+  type: 'REPLY_DONE';
+  text: string;
+}
+
+export interface GenerateReplyError {
+  type: 'REPLY_ERROR';
+  error: string;
+}
+
 export interface GenerateReplySuccess {
   ok: true;
   text: string;
@@ -34,5 +63,5 @@ export interface OpenOptionsRequest {
   type: 'OPEN_OPTIONS';
 }
 
-export type MessageRequest = GenerateReplyRequest | OpenOptionsRequest;
+export type MessageRequest = GenerateReplyRequest | GenerateReplyStreamRequest | OpenOptionsRequest;
 export type MessageResponse = GenerateReplyResponse | { ok: true };

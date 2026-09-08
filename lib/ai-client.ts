@@ -51,12 +51,100 @@ export function buildMessages(
   ];
 }
 
+export async function streamReply(
+  settings: Settings,
+  target: ReplyTarget,
+  onText: (text: string) => void,
+): Promise<string> {
+  if (!settings.systemAi && !settings.apiKey) {
+    throw new Error('No API key configured. Open Settings to add one.');
+  }
+
+  const cleanBaseUrl = settings.baseUrl.replace(/\/$/, '');
+  const isResponsesApi =
+    cleanBaseUrl.includes('manifest.build') || cleanBaseUrl.endsWith('/responses');
+  const endpoint = isResponsesApi
+    ? cleanBaseUrl.endsWith('/responses')
+      ? cleanBaseUrl
+      : `${cleanBaseUrl}/responses`
+    : `${cleanBaseUrl}/chat/completions`;
+
+  const persona = settings.persona?.trim();
+  const instructions = persona
+    ? `${SYSTEM_PROMPT_BASE}\n\nPersona — write the way this person writes: ${persona}`
+    : SYSTEM_PROMPT_BASE;
+  const body = isResponsesApi
+    ? {
+        model: settings.model || 'auto',
+        instructions,
+        input: [{ role: 'user', content: [
+          { type: 'input_text', text: target.text || '(empty post — reply based on context)' },
+          ...(target.imageDataUrl ? [{ type: 'input_image', image_url: target.imageDataUrl }] : []),
+        ] }],
+        max_output_tokens: 500,
+        store: false,
+        stream: true,
+      }
+    : {
+        model: settings.model,
+        messages: buildMessages(target, settings.persona),
+        temperature: 0.7,
+        max_tokens: 200,
+        stream: true,
+      };
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${settings.apiKey}` },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const errorBody = await res.text().catch(() => '');
+    throw new Error(`API ${res.status}: ${errorBody.slice(0, 300)}`);
+  }
+  if (!res.body) throw new Error('Provider did not return a stream.');
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let text = '';
+  const emit = (value: unknown) => {
+    if (typeof value !== 'string' || !value) return;
+    text += value;
+    onText(text);
+  };
+  const process = (line: string) => {
+    if (!line.startsWith('data:')) return;
+    const data = line.slice(5).trim();
+    if (!data || data === '[DONE]') return;
+    try {
+      const event = JSON.parse(data) as any;
+      emit(isResponsesApi
+        ? event.delta ?? event.text ?? event.output_text
+        : event.choices?.[0]?.delta?.content);
+    } catch {
+      // Providers occasionally send non-JSON SSE comments or keep-alives.
+    }
+  };
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+    const lines = buffer.split(/\r?\n/);
+    buffer = lines.pop() ?? '';
+    lines.forEach(process);
+    if (done) break;
+  }
+  process(buffer);
+  if (!text.trim()) throw new Error('Provider returned an empty reply');
+  return text.trim();
+}
+
 export async function generateReply(
   settings: Settings,
   target: ReplyTarget,
 ): Promise<string> {
-  if (!settings.apiKey) {
-    throw new Error('No API key configured. Open the extension options to add one.');
+  if (!settings.systemAi && !settings.apiKey) {
+    throw new Error('No API key configured. Open Settings to add one.');
   }
 
   const cleanBaseUrl = settings.baseUrl.replace(/\/$/, '');

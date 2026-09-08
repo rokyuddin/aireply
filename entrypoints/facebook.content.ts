@@ -4,11 +4,7 @@ import { facebookAdapter } from '../lib/platforms/facebook';
 import { extractTargetWithExpansion } from '../lib/platforms/extraction';
 import type { Composer } from '../lib/platforms/types';
 import type { IconHandle } from '../components/icon';
-import type {
-  GenerateReplyRequest,
-  GenerateReplyResponse,
-  OpenOptionsRequest,
-} from '../lib/messaging';
+import type { OpenOptionsRequest, ReplyStreamEvent } from '../lib/messaging';
 import { getSettings } from '../lib/storage';
 
 export default defineContentScript({
@@ -42,10 +38,9 @@ export default defineContentScript({
 
     const generateAndInsert = async (composer: Composer, icon: IconHandle): Promise<void> => {
       const settings = await getSettings();
-      if (!settings.apiKey) {
-        // Missing key isn't a retryable error here — send the user to
-        // setup. The background owns openOptionsPage (content scripts
-        // don't have that API).
+      if (!settings.systemAi && !settings.apiKey) {
+        // Custom providers need credentials before generation can start.
+        // The background owns openOptionsPage (content scripts don't have that API).
         icon.setState('idle');
         const req: OpenOptionsRequest = { type: 'OPEN_OPTIONS' };
         await chrome.runtime.sendMessage(req);
@@ -59,21 +54,36 @@ export default defineContentScript({
         throw new Error('Could not read the post or comment to reply to.');
       }
 
-      const req: GenerateReplyRequest = { type: 'GENERATE_REPLY', target, settings };
-      const reply = (await chrome.runtime.sendMessage(req)) as
-        | GenerateReplyResponse
-        | undefined;
-
-      if (!reply) throw new Error('No response from the extension background.');
-      if (!reply.ok) throw new Error(reply.error);
-
-      // Clear the composer's previous AI draft before inserting the new
-      // one so regenerate replaces rather than appends.
-      clearComposerDraft(composer.editor);
-      if (!adapter.insertReply(composer.editor, reply.text)) {
-        throw new Error('Could not type the draft into the comment box — try again.');
-      }
-      lastDraft.set(composer.editor, reply.text);
+      const requestId = crypto.randomUUID();
+      const req = { type: 'GENERATE_REPLY_STREAM' as const, requestId, target, settings };
+      let streamedText = '';
+      await new Promise<void>((resolve, reject) => {
+        const onEvent = (message: ReplyStreamEvent) => {
+          if (message.requestId !== requestId) return;
+          if (message.type === 'REPLY_CHUNK' && message.text) {
+            clearComposerDraft(composer.editor);
+            streamedText = message.text;
+            if (!adapter.insertReply(composer.editor, streamedText)) {
+              cleanup();
+              reject(new Error('Could not type the draft into the comment box — try again.'));
+              return;
+            }
+            lastDraft.set(composer.editor, streamedText);
+          } else if (message.type === 'REPLY_ERROR') {
+            cleanup();
+            reject(new Error(message.error ?? 'AI reply generation failed.'));
+          } else if (message.type === 'REPLY_DONE') {
+            cleanup();
+            resolve();
+          }
+        };
+        const cleanup = () => chrome.runtime.onMessage.removeListener(onEvent);
+        chrome.runtime.onMessage.addListener(onEvent);
+        void chrome.runtime.sendMessage(req).catch((err) => {
+          cleanup();
+          reject(err);
+        });
+      });
       icon.setState('idle');
     };
   },

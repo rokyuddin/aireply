@@ -1,5 +1,6 @@
 /** BYOK settings persisted in chrome.storage.local. */
 export interface Settings {
+  systemAi: boolean;
   apiKey: string;
   /** OpenAI-compatible base URL, e.g. https://openrouter.ai/api/v1 */
   baseUrl: string;
@@ -10,7 +11,8 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  apiKey: 'mnfst_nBytW7Wg2mj7LExom0Mul5xb2nWwbj6jma5BRti17fY',
+  systemAi: true,
+  apiKey: '',
   baseUrl: 'https://app.manifest.build/v1',
   model: 'auto',
   persona: '',
@@ -23,7 +25,8 @@ export async function getSettings(): Promise<Settings> {
   const str = (v: unknown, fallback: string): string =>
     typeof v === 'string' && v.trim() ? v : fallback;
   return {
-    apiKey: str(stored.apiKey, DEFAULT_SETTINGS.apiKey),
+    systemAi: typeof stored.systemAi === 'boolean' ? stored.systemAi : DEFAULT_SETTINGS.systemAi,
+    apiKey: typeof stored.apiKey === 'string' ? stored.apiKey : DEFAULT_SETTINGS.apiKey,
     baseUrl: str(stored.baseUrl, DEFAULT_SETTINGS.baseUrl),
     model: str(stored.model, DEFAULT_SETTINGS.model),
     persona: typeof stored.persona === 'string' ? stored.persona : '',

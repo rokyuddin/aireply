@@ -13,7 +13,8 @@ export default defineConfig({
       '128': 'icons/128.png',
     },
     action: {
-      default_title: 'AIReply Settings',
+      default_title: 'Open AIReply',
+      default_popup: 'popup/index.html',
     },
     permissions: ['storage'],
     host_permissions: [

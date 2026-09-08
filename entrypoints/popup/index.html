@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AIReply</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #18212f; background: #fbfcfe; }
+      * { box-sizing: border-box; }
+      body { width: 360px; min-height: 520px; margin: 0; background: #fbfcfe; }
+      button, input, textarea { font: inherit; }
+      button { cursor: pointer; }
+      button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #cbd7ff; outline-offset: 2px; }
+      .app { display: flex; min-height: 520px; flex-direction: column; }
+      header { padding: 18px 20px; border-bottom: 1px solid #e8ecf3; background: #fff; }
+      .brand { display: flex; align-items: center; gap: 10px; }
+      .brand img { width: 30px; height: 30px; }
+      .brand h1 { margin: 0; font-size: 16px; letter-spacing: -.02em; }
+      .brand p { margin: 2px 0 0; color: #758197; font-size: 11px; }
+      main { flex: 1; padding: 24px 20px 82px; }
+      .eyebrow { margin: 0 0 7px; color: #758197; font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+      h2 { margin: 0; font-size: 24px; line-height: 1.1; letter-spacing: -.04em; }
+      .lede { margin: 9px 0 20px; color: #637086; font-size: 13px; line-height: 1.5; }
+      .status, .provider-row, .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border: 1px solid #e1e6ee; border-radius: 12px; background: #fff; }
+      .status-copy { display: flex; align-items: center; gap: 10px; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #16a673; box-shadow: 0 0 0 4px #e3f7ef; }
+      .status strong, .provider-row strong, .toggle-row strong { display: block; font-size: 13px; }
+      .status span, .provider-row p, .toggle-row p { display: block; margin: 4px 0 0; color: #758197; font-size: 11px; }
+      .badge { padding: 4px 7px; border-radius: 999px; background: #e3f7ef; color: #137653; font-size: 10px; font-weight: 700; }
+      .button { width: 100%; margin-top: 14px; padding: 11px 14px; border: 0; border-radius: 9px; background: #315efb; color: #fff; font-size: 13px; font-weight: 700; transition: background .15s ease; }
+      .button:hover { background: #244ddd; }
+      .section { margin-top: 22px; }
+      .section-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; font-size: 12px; font-weight: 700; }
+      .section-title button { padding: 3px 0; border: 0; background: none; color: #315efb; font-size: 12px; font-weight: 700; }
+      nav { position: fixed; bottom: 0; width: 360px; display: grid; grid-template-columns: repeat(3, 1fr); padding: 8px 12px 10px; border-top: 1px solid #e6ebf2; background: #fff; }
+      nav button { padding: 6px 4px; border: 0; background: none; color: #758197; font-size: 11px; font-weight: 700; }
+      nav button.active { color: #315efb; }
+      nav .icon { display: none; }
+      .field { margin-top: 14px; }
+      label { display: block; margin-bottom: 6px; color: #3b475b; font-size: 12px; font-weight: 700; }
+      input, textarea { width: 100%; padding: 10px 11px; border: 1px solid #d7dfe9; border-radius: 9px; outline: none; background: #fff; color: #18212f; font-size: 12px; }
+      input:focus, textarea:focus { border-color: #315efb; box-shadow: 0 0 0 3px #e7ecff; }
+      textarea { min-height: 74px; resize: vertical; }
+      .toggle-row { align-items: center; }
+      .toggle { position: relative; width: 40px; height: 22px; flex: 0 0 auto; }
+      .toggle input { position: absolute; opacity: 0; }
+      .slider { position: absolute; inset: 0; border-radius: 99px; background: #c8d1df; transition: .2s; }
+      .slider::before { position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; border-radius: 50%; background: white; content: ''; transition: .2s; box-shadow: 0 1px 3px #18212f33; }
+      .toggle input:checked + .slider { background: #315efb; }
+      .toggle input:checked + .slider::before { transform: translateX(18px); }
+      .hint { margin: 7px 0 0; color: #758197; font-size: 11px; line-height: 1.4; }
+      .message { min-height: 17px; margin-top: 9px; color: #137653; font-size: 11px; }
+      .message.error { color: #c24151; }
+      .hidden { display: none; }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header><div class="brand"><img src="/icons/icon.svg" alt="AIReply logo" /><div><h1>AIReply</h1><p>Thoughtful replies, still yours.</p></div></div></header>
+      <main>
+        <section data-view="home">
+          <p class="eyebrow">Your assistant</p><h2>Ready when you are.</h2>
+          <p class="lede">Open Facebook and use the AIReply button beside any composer. Review every draft before posting.</p>
+          <div class="status"><div class="status-copy"><i class="dot"></i><div><strong id="homeMode">System AI is on</strong><span id="homeProvider">No API key needed</span></div></div><span class="badge">ACTIVE</span></div>
+          <button class="button" id="useAi">Open Facebook</button>
+          <div class="section"><div class="section-title"><span>Active provider</span><button data-nav="providers">Manage</button></div><div class="provider-row"><div><strong id="providerName">System AI</strong><p id="providerDetail">Managed by AIReply</p></div><span class="badge">DEFAULT</span></div></div>
+        </section>
+        <section class="hidden" data-view="providers">
+          <p class="eyebrow">AI provider</p><h2>Choose your setup.</h2><p class="lede">System AI keeps setup simple. Use your own provider when you want full control.</p>
+          <div class="toggle-row"><div><strong>Use System AI</strong><p>No API key or endpoint required.</p></div><label class="toggle"><input id="systemAi" type="checkbox"><span class="slider"></span></label></div>
+          <div id="customFields" class="hidden"><div class="field"><label for="apiKey">API key</label><input id="apiKey" type="password" autocomplete="off" placeholder="Paste your provider key"></div><div class="field"><label for="baseUrl">Base URL</label><input id="baseUrl" type="url" placeholder="https://api.openai.com/v1"></div><div class="field"><label for="model">Model</label><input id="model" type="text" placeholder="gpt-4o-mini"></div><p class="hint">Your key is stored locally and only sent to your selected endpoint.</p></div>
+          <button class="button" id="saveProvider">Save provider</button><p class="message" id="providerMessage" role="status"></p>
+        </section>
+        <section class="hidden" data-view="settings">
+          <p class="eyebrow">Preferences</p><h2>Make it sound like you.</h2><p class="lede">Give AIReply a little context about your voice. This stays on your device.</p>
+          <div class="field"><label for="persona">Persona / tone</label><textarea id="persona" placeholder="Warm, casual, concise — the way I talk to friends."></textarea></div><button class="button" id="saveSettings">Save preferences</button><p class="message" id="settingsMessage" role="status"></p>
+        </section>
+      </main>
+      <nav aria-label="Primary"><button class="active" data-nav="home"><span class="icon" aria-hidden="true"></span><span>Home</span></button><button data-nav="providers"><span class="icon" aria-hidden="true"></span><span>Providers</span></button><button data-nav="settings"><span class="icon" aria-hidden="true"></span><span>Settings</span></button></nav>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

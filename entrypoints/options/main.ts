@@ -4,7 +4,7 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 
 async function load(): Promise<void> {
   const s = await getSettings();
-  ($('apiKey') as HTMLInputElement).value = s.apiKey;
+  ($('apiKey') as HTMLInputElement).value = s.apiKey ?? '';
   ($('baseUrl') as HTMLInputElement).value = s.baseUrl;
   ($('model') as HTMLInputElement).value = s.model;
   ($('persona') as HTMLTextAreaElement).value = s.persona;

@@ -46,6 +46,7 @@ const ICON_CSS = `
   bottom: calc(100% + 6px);
   right: 0;
   z-index: 2147483646;
+  display: none;
   max-width: 260px;
   padding: 8px 10px;
   border-radius: 8px;
