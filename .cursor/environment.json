@@ -1,0 +1,4 @@
+{
+  "name": "AIReply Extension",
+  "install": "pnpm install --frozen-lockfile && pnpm wxt prepare"
+}
