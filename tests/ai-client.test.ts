@@ -67,8 +67,8 @@ describe('generateReply', () => {
     vi.unstubAllGlobals();
   });
 
-  it('POSTs to the configured base URL with bearer auth and returns the reply text', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okManifestResponse('Great news! 🎉'));
+  it('POSTs to OpenRouter with bearer auth, headers, and returns the reply text', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse('Great news! 🎉'));
     vi.stubGlobal('fetch', fetchMock);
 
     const target: ReplyTarget = { text: 'I got the job!' };
@@ -76,15 +76,20 @@ describe('generateReply', () => {
 
     expect(reply).toBe('Great news! 🎉');
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('https://app.manifest.build/v1/responses');
+    expect(url).toBe('https://openrouter.ai/api/v1/chat/completions');
     expect(init.method).toBe('POST');
     expect((init.headers as Record<string, string>).Authorization).toBe(
       'Bearer sk-test',
     );
+    expect((init.headers as Record<string, string>)['HTTP-Referer']).toBe(
+      'https://github.com/rokyuddin/aireply-extension',
+    );
+    expect((init.headers as Record<string, string>)['X-Title']).toBe(
+      'AIReply',
+    );
     const body = JSON.parse(init.body as string);
-    expect(body.model).toBe(DEFAULT_SETTINGS.model);
-    expect(body.store).toBe(false);
-    expect(body.max_output_tokens).toBe(500);
+    expect(body.model).toBe('openrouter/free');
+    expect(body.max_tokens).toBe(200);
   });
 
   it('respects a custom base URL and model', async () => {
@@ -92,13 +97,13 @@ describe('generateReply', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await generateReply(
-      { ...settings, baseUrl: 'https://api.groq.com/openai/v1', model: 'llama-4' },
+      { ...settings, baseUrl: 'https://openrouter.ai/api/v1', model: 'openrouter/free' },
       { text: 'hi' },
     );
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('https://api.groq.com/openai/v1/chat/completions');
-    expect(JSON.parse(init.body as string).model).toBe('llama-4');
+    expect(url).toBe('https://openrouter.ai/api/v1/chat/completions');
+    expect(JSON.parse(init.body as string).model).toBe('openrouter/free');
   });
 
   it('throws a readable error on auth failure', async () => {

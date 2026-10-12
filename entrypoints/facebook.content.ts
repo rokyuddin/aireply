@@ -38,8 +38,8 @@ export default defineContentScript({
 
     const generateAndInsert = async (composer: Composer, icon: IconHandle): Promise<void> => {
       const settings = await getSettings();
-      if (!settings.systemAi && !settings.apiKey) {
-        // Custom providers need credentials before generation can start.
+      if (!settings.apiKey) {
+        // Needs OpenRouter API key before generation can start.
         // The background owns openOptionsPage (content scripts don't have that API).
         icon.setState('idle');
         const req: OpenOptionsRequest = { type: 'OPEN_OPTIONS' };

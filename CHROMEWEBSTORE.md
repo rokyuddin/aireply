@@ -102,4 +102,5 @@ English
 
 | Version | Date | Changes | Status |
 |---|---|---|---|
-| 0.1.0 | 2026-09-07 | Initial release: Facebook comment draft injection, BYOK OpenAI-compatible client, vision image support, custom personas. | Draft |
+| 0.1.1 | 2026-09-20 | Streaming AI replies, System AI default, and refreshed popup UI. | Ready to upload |
+| 0.1.0 | 2026-09-07 | Initial release: Facebook comment draft injection, BYOK OpenAI-compatible client, vision image support, custom personas. | Published |

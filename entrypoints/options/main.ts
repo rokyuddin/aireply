@@ -18,8 +18,8 @@ async function save(): Promise<void> {
   }
   await saveSettings({
     apiKey: ($('apiKey') as HTMLInputElement).value.trim(),
-    baseUrl,
-    model: ($('model') as HTMLInputElement).value.trim(),
+    baseUrl: baseUrl || 'https://openrouter.ai/api/v1',
+    model: ($('model') as HTMLInputElement).value.trim() || 'openrouter/free',
     persona: ($('persona') as HTMLTextAreaElement).value.trim(),
   });
   status('Settings saved ✓ Open Facebook to use AIReply', false);

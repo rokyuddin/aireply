@@ -1,6 +1,6 @@
 {
   "name": "aireply-extension",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI reply drafts for Facebook posts and comments (BYOK, OpenAI-compatible)",
   "type": "module",
   "scripts": {

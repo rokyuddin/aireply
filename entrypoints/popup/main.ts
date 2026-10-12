@@ -19,39 +19,44 @@ function message(id: string, text: string, error = false): void {
   }, 3500);
 }
 
-function syncProviderFields(systemAi: boolean): void {
-  $('customFields').classList.toggle('hidden', systemAi);
-  $('homeMode').textContent = systemAi ? 'System AI is on' : 'Custom provider is on';
-  $('homeProvider').textContent = systemAi ? 'No API key needed' : 'Using your saved API key';
-  $('providerName').textContent = systemAi ? 'System AI' : 'Custom provider';
-  $('providerDetail').textContent = systemAi ? 'Managed by AIReply' : ($('model') as HTMLInputElement).value || 'Configured locally';
+function syncProviderFields(apiKey: string, model: string): void {
+  const hasKey = Boolean(apiKey?.trim());
+  $('homeMode').textContent = hasKey ? 'OpenRouter is ready' : 'API key required';
+  $('homeProvider').textContent = hasKey ? `Model: ${model || 'openrouter/free'}` : 'Add your free OpenRouter API key';
+  $('providerName').textContent = 'OpenRouter AI';
+  $('providerDetail').textContent = model || 'openrouter/free';
+  const badge = document.querySelector('.status .badge') as HTMLElement;
+  if (badge) {
+    badge.textContent = hasKey ? 'ACTIVE' : 'SETUP REQUIRED';
+    badge.style.background = hasKey ? '#e3f7ef' : '#fff4e5';
+    badge.style.color = hasKey ? '#137653' : '#b25e00';
+  }
 }
 
 async function load(): Promise<void> {
   const settings = await getSettings();
-  ($('systemAi') as HTMLInputElement).checked = settings.systemAi;
   ($('apiKey') as HTMLInputElement).value = settings.apiKey;
   ($('baseUrl') as HTMLInputElement).value = settings.baseUrl;
   ($('model') as HTMLInputElement).value = settings.model;
   ($('persona') as HTMLTextAreaElement).value = settings.persona;
-  syncProviderFields(settings.systemAi);
+  syncProviderFields(settings.apiKey, settings.model);
 }
 
 async function saveProvider(): Promise<void> {
-  const systemAi = ($('systemAi') as HTMLInputElement).checked;
-  const baseUrl = ($('baseUrl') as HTMLInputElement).value.trim();
   const apiKey = ($('apiKey') as HTMLInputElement).value.trim();
-  if (!systemAi && !apiKey) {
-    message('providerMessage', 'Add an API key or turn on System AI.', true);
+  const baseUrl = ($('baseUrl') as HTMLInputElement).value.trim();
+  const model = ($('model') as HTMLInputElement).value.trim() || 'openrouter/free';
+  if (!apiKey) {
+    message('providerMessage', 'Please add your OpenRouter API key.', true);
     return;
   }
-  if (!systemAi && baseUrl && !/^https?:\/\//i.test(baseUrl)) {
+  if (baseUrl && !/^https?:\/\//i.test(baseUrl)) {
     message('providerMessage', 'Base URL must start with http:// or https://.', true);
     return;
   }
-  await saveSettings({ systemAi, apiKey, baseUrl, model: ($('model') as HTMLInputElement).value.trim() });
-  syncProviderFields(systemAi);
-  message('providerMessage', 'Provider saved.');
+  await saveSettings({ apiKey, baseUrl, model });
+  syncProviderFields(apiKey, model);
+  message('providerMessage', 'OpenRouter settings saved ✓');
 }
 
 async function savePreferences(): Promise<void> {
@@ -60,7 +65,6 @@ async function savePreferences(): Promise<void> {
 }
 
 navItems.forEach((item) => item.addEventListener('click', () => showView(item.dataset.nav ?? 'home')));
-$('systemAi').addEventListener('change', () => syncProviderFields(($('systemAi') as HTMLInputElement).checked));
 $('saveProvider').addEventListener('click', () => void saveProvider());
 $('saveSettings').addEventListener('click', () => void savePreferences());
 $('useAi').addEventListener('click', () => {

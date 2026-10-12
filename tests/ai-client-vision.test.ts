@@ -37,31 +37,21 @@ describe('vision payload', () => {
     expect(system).toContain('OCR');
   });
 
-  it('sends the image through to the provider in responses API', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          output: [
-            {
-              type: 'message',
-              content: [{ type: 'output_text', text: 'nice pic' }],
-            },
-          ],
-        }),
-        { status: 200 },
-      ),
-    );
+  it('sends the image through to OpenRouter chat/completions with openrouter/free', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse('nice pic'));
     vi.stubGlobal('fetch', fetchMock);
 
     const reply = await generateReply(settings, { text: 'look', imageDataUrl: DATA_URL });
     expect(reply).toBe('nice pic');
 
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://openrouter.ai/api/v1/chat/completions');
     const body = JSON.parse(init.body as string);
-    const userContent = body.input[0].content;
+    expect(body.model).toBe('openrouter/free');
+    const userContent = body.messages[1].content;
     expect(userContent).toHaveLength(2);
-    expect(userContent[1].type).toBe('input_image');
-    expect(userContent[1].image_url).toBe(DATA_URL);
+    expect(userContent[1].image_url.url).toBe(DATA_URL);
+    expect(userContent[1].image_url.detail).toBe('low');
   });
 
   it('sends the image through to custom chat/completions provider', async () => {

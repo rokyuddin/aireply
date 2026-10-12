@@ -20,13 +20,7 @@ export default defineConfig({
     host_permissions: [
       'https://*.facebook.com/*',
       'https://*.fbcdn.net/*',
-      'https://app.manifest.build/*',
-      'https://*.tokenharbor.ai/*',
-      'https://tokenharbor.ai/*',
       'https://openrouter.ai/*',
-      'https://api.openai.com/*',
-      'https://api.groq.com/*',
-      'https://generativelanguage.googleapis.com/*',
     ],
   },
 });

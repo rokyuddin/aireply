@@ -56,46 +56,29 @@ export async function streamReply(
   target: ReplyTarget,
   onText: (text: string) => void,
 ): Promise<string> {
-  if (!settings.systemAi && !settings.apiKey) {
-    throw new Error('No API key configured. Open Settings to add one.');
+  if (!settings.apiKey) {
+    throw new Error('No OpenRouter API key configured. Open Settings to add one.');
   }
 
   const cleanBaseUrl = settings.baseUrl.replace(/\/$/, '');
-  const isResponsesApi =
-    cleanBaseUrl.includes('manifest.build') || cleanBaseUrl.endsWith('/responses');
-  const endpoint = isResponsesApi
-    ? cleanBaseUrl.endsWith('/responses')
-      ? cleanBaseUrl
-      : `${cleanBaseUrl}/responses`
-    : `${cleanBaseUrl}/chat/completions`;
+  const endpoint = `${cleanBaseUrl}/chat/completions`;
 
-  const persona = settings.persona?.trim();
-  const instructions = persona
-    ? `${SYSTEM_PROMPT_BASE}\n\nPersona — write the way this person writes: ${persona}`
-    : SYSTEM_PROMPT_BASE;
-  const body = isResponsesApi
-    ? {
-        model: settings.model || 'auto',
-        instructions,
-        input: [{ role: 'user', content: [
-          { type: 'input_text', text: target.text || '(empty post — reply based on context)' },
-          ...(target.imageDataUrl ? [{ type: 'input_image', image_url: target.imageDataUrl }] : []),
-        ] }],
-        max_output_tokens: 500,
-        store: false,
-        stream: true,
-      }
-    : {
-        model: settings.model,
-        messages: buildMessages(target, settings.persona),
-        temperature: 0.7,
-        max_tokens: 200,
-        stream: true,
-      };
+  const body = {
+    model: settings.model || 'openrouter/free',
+    messages: buildMessages(target, settings.persona),
+    temperature: 0.7,
+    max_tokens: 200,
+    stream: true,
+  };
 
   const res = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${settings.apiKey}` },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${settings.apiKey}`,
+      'HTTP-Referer': 'https://github.com/rokyuddin/aireply-extension',
+      'X-Title': 'AIReply',
+    },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -119,9 +102,7 @@ export async function streamReply(
     if (!data || data === '[DONE]') return;
     try {
       const event = JSON.parse(data) as any;
-      emit(isResponsesApi
-        ? event.delta ?? event.text ?? event.output_text
-        : event.choices?.[0]?.delta?.content);
+      emit(event.choices?.[0]?.delta?.content);
     } catch {
       // Providers occasionally send non-JSON SSE comments or keep-alives.
     }
@@ -143,83 +124,23 @@ export async function generateReply(
   settings: Settings,
   target: ReplyTarget,
 ): Promise<string> {
-  if (!settings.systemAi && !settings.apiKey) {
-    throw new Error('No API key configured. Open Settings to add one.');
+  if (!settings.apiKey) {
+    throw new Error('No OpenRouter API key configured. Open Settings to add one.');
   }
 
   const cleanBaseUrl = settings.baseUrl.replace(/\/$/, '');
-  const isResponsesApi =
-    cleanBaseUrl.includes('manifest.build') || cleanBaseUrl.endsWith('/responses');
-
-  if (isResponsesApi) {
-    const endpoint = cleanBaseUrl.endsWith('/responses')
-      ? cleanBaseUrl
-      : `${cleanBaseUrl}/responses`;
-
-    const persona = settings.persona?.trim();
-    const instructions = persona
-      ? `${SYSTEM_PROMPT_BASE}\n\nPersona — write the way this person writes: ${persona}`
-      : SYSTEM_PROMPT_BASE;
-
-    const inputContent: Array<{ type: string; text?: string; image_url?: string }> = [
-      { type: 'input_text', text: target.text || '(empty post — reply based on context)' },
-    ];
-    if (target.imageDataUrl) {
-      inputContent.push({
-        type: 'input_image',
-        image_url: target.imageDataUrl,
-      });
-    }
-
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${settings.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: settings.model || 'auto',
-        instructions,
-        input: [
-          {
-            role: 'user',
-            content: inputContent,
-          },
-        ],
-        max_output_tokens: 500,
-        store: false,
-      }),
-    });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      throw new Error(`API ${res.status}: ${body.slice(0, 300)}`);
-    }
-
-    const data = (await res.json()) as any;
-    let text = data.choices?.[0]?.message?.content?.trim();
-    if (!text && Array.isArray(data.output)) {
-      const msg = data.output.find((o: any) => o.type === 'message') ?? data.output[0];
-      const textPart =
-        msg?.content?.find((c: any) => c.type === 'output_text') ?? msg?.content?.[0];
-      text = textPart?.text?.trim();
-    }
-    if (!text) throw new Error('Provider returned an empty reply');
-    return text;
-  }
-
   const res = await fetch(`${cleanBaseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${settings.apiKey}`,
+      'HTTP-Referer': 'https://github.com/rokyuddin/aireply-extension',
+      'X-Title': 'AIReply',
     },
     body: JSON.stringify({
-      model: settings.model,
+      model: settings.model || 'openrouter/free',
       messages: buildMessages(target, settings.persona),
       temperature: 0.7,
-      // max_tokens: the only cap every OpenAI-compatible provider
-      // understands (max_completion_tokens is OpenAI-only).
       max_tokens: 200,
       stream: false,
     }),
